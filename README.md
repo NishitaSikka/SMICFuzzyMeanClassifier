@@ -1,8 +1,12 @@
 # SMICFuzzyMeanClassifier
 Class based simmiliarity and dissimilarity measures for fuzzy soft classifier with multiple classes of Remote Sensing Images
+
 Project Details:
+
 Name: Class based simmiliarity and dissimilarity measures for fuzzy soft classifier with multiple classes of Remote Sensing Images
+
 Where: Indian Institute Of Remote Sensing (ISRO) Dehradun
+
 Guide: Dr. Anil Kumar (Scientist/Engineer - IIRS Dehradun)
 
 
