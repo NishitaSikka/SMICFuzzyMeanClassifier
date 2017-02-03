@@ -454,7 +454,13 @@ class picture extends JPanel
 	public static int []minBand;
 	public static byte pix_rgb[][];
 	public static int shiftFlag=0;
-
+        public static double sidband1[];
+        public static double sidband2[];
+        public static double sidband3[];
+        public static double sidband4[];
+	FileInputStream fin_band[];
+ 	FileChannel fchan_in[];
+		
 	public static void setimage(String nam)
 	{
 		ImageFile = new File(nam);
@@ -475,6 +481,10 @@ class picture extends JPanel
 		int p = Color1;
 		int q = Color2;
 		int r = Color3;
+		sidband1 = new double[Width*Height];
+		sidband2 = new double[Width*Height];
+		sidband3 = new double[Width*Height];
+		sidband4 = new double[Width*Height];
 		System.out.println("Bands : " + Bands);
 		System.out.println("Width : " + Width);
 		System.out.println("Height : " + Height);
@@ -623,8 +633,8 @@ class picture extends JPanel
 		WritableRaster raster = img.getRaster();
 
 
-		FileInputStream fin_band[]=new FileInputStream[Bands];
- 		FileChannel fchan_in[]=new FileChannel[Bands];
+		 fin_band=new FileInputStream[Bands];
+ 		fchan_in=new FileChannel[Bands];
 
  		index = 0;
  		double myTempCalc;
@@ -657,8 +667,7 @@ class picture extends JPanel
 		 	flag1=0; //flag1 indicates whether there is slicing
 		 	y_pass=Width;
 		}
-
-
+							
 		int band_num[] = new int[Bands];
 		String input;
 
@@ -829,7 +838,8 @@ class picture extends JPanel
  				//convert raw bytes into arrays.
  				if(shiftFlag == 8)
  				{
- 					System.out.println("This is an 8 bit image");
+					getSID();
+ 					System.out.println("This is an 8 bit image!!!");
 					for(i=0;i<fsize;i++)
 					{
 						pix[i]=255;
@@ -1208,7 +1218,7 @@ class picture extends JPanel
 							System.out.println("fsize :"+fsize);
 							double TempCalc;
 							int myChkVal;
-
+							
 						System.out.println("Check value : p : " + p + ", q : " + q + ", r : " + r);
 						if(Bands!=1)
 						{
@@ -1433,7 +1443,8 @@ class picture extends JPanel
 
 
 			}
-
+			
+			
 
 			for( i=0;i<Bands;i++)
 			{
@@ -1453,6 +1464,7 @@ class picture extends JPanel
  		return img;
  	}
 
+
 	public int[] minArray()
 	{
 		return minBand;
@@ -1462,6 +1474,56 @@ class picture extends JPanel
 	{
 		return maxBand;
 	}
+
+	public void getSID()
+	{
+			long start,len;
+			MappedByteBuffer mBuf1;
+			byte b;
+			int tempcount123;
+			try	
+			{
+
+								for(int i1=0;i1<Bands;i1++)
+						 		{
+									int ridhima = -1;
+								for(int y1=0;y1<Height ; y1++)
+								{
+								for(int x1=0;x1<Width;x1++)
+								{
+						 			start=y1*Width+x1;
+									//System.out.println("start " + start  + " Width " + Width );
+						 			len=1;
+						 			mBuf1=fchan_in[i1].map(FileChannel.MapMode.READ_ONLY,start,len);
+						 			b=mBuf1.get();
+						 			tempcount123 = (b<< 24) >>> 24;
+						 		 	
+									if(i1==0)			
+									sidband1[++ridhima] = tempcount123;
+									else if(i1==1)			
+									sidband2[++ridhima] = tempcount123;
+									else if(i1==2)			
+									sidband3[++ridhima] = tempcount123;
+									else if(i1==3)			
+									sidband4[++ridhima] = tempcount123;
+								
+			
+
+								//System.out.println("val on band : "+(i1+1)+" = "+(double)tempcount123 + "  "+ridhima);
+						 		}
+								}
+								}
+		}
+		catch(Exception ex)
+		{
+			System.out.println("Hello !!!!!!!!!!");
+			ex.printStackTrace();
+		}
+		for(int yo=0 ; yo<Width*Height ; yo++)				
+			System.out.println("pixel  "+Integer.toString(yo+1)+" : "+sidband1[yo]+"  "+sidband2[yo]+"  "+sidband3[yo]+"  "+sidband4[yo]);
+
+	}
+
 
 
 }
@@ -1619,6 +1681,8 @@ class DemoPanel extends JPanel implements MouseMotionListener
 
 						 x=(int)(x/BilImage.zoomFactor);
 						 y=(int)(y/BilImage.zoomFactor);
+				
+						 System.out.println("X and Y  : "+ x +" "+ y);
 
 						 clicks=Noofclicks;
 						 System.out.println("clicks : "+(Noofclicks+1));
@@ -1632,12 +1696,13 @@ class DemoPanel extends JPanel implements MouseMotionListener
 						 		for(i=0;i<Bands1;i++)
 						 		{
 						 			start=y*Width1+x;
+									System.out.println("start " + start  + " Width " + Width1 );
 						 			len=1;
 						 			mBuf=fchan_in[i].map(FileChannel.MapMode.READ_ONLY,start,len);
 						 			b=mBuf.get();
 						 			tempCount = (b<< 24) >>> 24;
 						 		    val1[i][clicks]=tempCount;
-						 			System.out.println("val on band : "+(i+1)+" = "+(double)tempCount);
+						 			System.out.println("val24 on band : "+(i+1)+" = "+(double)tempCount);
 						 		}
 						 	}
 						 	else
@@ -1654,7 +1719,7 @@ class DemoPanel extends JPanel implements MouseMotionListener
 									tempCount = p1 | p2;
 									tempCount = tempCount >>> 16;
 									val1[i][clicks]=tempCount;
-						 			System.out.println("val on band : "+(i+1)+" = "+(double)tempCount);
+						 			System.out.println("val16 on band : "+(i+1)+" = "+(double)tempCount);
 						 		}
 						 	}
 
@@ -4232,7 +4297,12 @@ class Fcm extends JFrame implements ActionListener
   static Object cname[]=new Object[20];
   double mean[][];
   double mul[][];
-
+  static double band1[];
+ static double band2[];
+ static double band3[];
+  static double band4[];
+  double meantemp[];
+  int sikka = -1;
   int siz;
   static int tablerows;
 
@@ -4320,6 +4390,34 @@ class Fcm extends JFrame implements ActionListener
   int alphaflag=0;
 
   double angle;
+  double value;
+  int counter = 0;
+  double sid;
+	public void showValuesOfSid()
+	{
+		for(int nishitaa = 0 ; nishitaa < (h*w)/4 ; nishitaa++)
+		{
+			double sumOfSID=0.0;
+		for(int nishita = 0 ; nishita < (h*w)/4 ; nishita++)
+		{
+			sid = (((band1[nishitaa]*Math.log(band1[nishitaa]/band1[nishita]))+(band1[nishita]*Math.log(band1[nishita]/band1[nishitaa])))+((band2[nishitaa]*Math.log(band2[nishitaa]/band2[nishita]))+(band2[nishita]*Math.log(band2[nishita]/band2[nishitaa])))+((band3[nishitaa]*Math.log(band3[nishitaa]/band3[nishita]))+(band3[nishita]*Math.log(band3[nishita]/band3[nishitaa])))+((band4[nishitaa]*Math.log(band4[nishitaa]/band4[nishita]))+(band4[nishita]*Math.log(band4[nishita]/band4[nishitaa]))));
+			/*double sid1 =((band1[nishitaa]*Math.log(band1[nishitaa]/band1[nishita]))+(band1[nishita]*Math.log(band1[nishita]/band1[nishitaa]))); 
+			double sid2 =((band2[nishitaa]*Math.log(band2[nishitaa]/band2[nishita]))+(band2[nishita]*Math.log(band2[nishita]/band2[nishitaa]))); 
+			double sid3 =((band3[nishitaa]*Math.log(band3[nishitaa]/band3[nishita]))+(band3[nishita]*Math.log(band3[nishita]/band3[nishitaa]))); 
+			double sid4 =((band4[nishitaa]*Math.log(band4[nishitaa]/band4[nishita]))+(band4[nishita]*Math.log(band4[nishita]/band4[nishitaa]))); 
+			*/
+			if(!Double.isNaN(sid))
+			sumOfSID = sumOfSID + sid;
+			//if(!Double.isNaN(sid))
+			//	System.out.println(nishita + "sid values "+sid);	
+			//System.out.println("sid values : "+sid1 + "  "+sid2 + "  "+ sid3 +" " +sid4 );
+			//System.out.println(nishita + " sid value : "+band1[nishita]+" "+band2[nishita]+" "+band3[nishita]+" " + band4[nishita]);
+
+		}
+				System.out.println(nishitaa + "sid values "+sumOfSID);	
+			
+		}
+	}
   public Fcm()
   {
 
@@ -4745,6 +4843,10 @@ public double determinant(double a[][],int n)
     		w= new ReadImageData().columns();
 			meu=new double[count+1][h*w];
 			dsq=new double[count][h*w];
+			band1 = new double[h*w/4];
+			band2 = new double[h*w/4];
+			band3 = new double[h*w/4];
+			band4 = new double[h*w/4];
  		    x=new double[b];
  		    sub=new double[b][1];
  		    subT=new double[1][b];
@@ -5259,7 +5361,7 @@ public double determinant(double a[][],int n)
 
                          else if(txt.compareTo("Cosine")==0)
 				  				            {
-					int counter = 0;
+					//int counter = 0;
 											//System.out.println("cos:::::::::::::::::::"+txt);
 
 									                  for(int j=0;j<b;j++)
@@ -5290,12 +5392,13 @@ public double determinant(double a[][],int n)
 																for(int k=0;k<b;k++)
 																 {
 																  dsq[l][i]=(sub[k][0])/(mul[0][k]*subT[0][k]);
-											                         if(mul[0][k]*subT[0][k]!=0)		
+											                         /*if(mul[0][k]*subT[0][k]!=0)		
 											                         {
-											                          angle = dsq[l][i];
-																	System.out.println(i +" "+Math.acos(angle)*180/Math.PI +" tan angle "+ Math.tan(angle)*180/Math.PI);
+											                          value = dsq[l][i];
+														  angle = (Math.acos(value)*180)/Math.PI;		
+															System.out.println((++counter) +" "+angle +" tan angle "+ Math.tan(angle*Math.PI/180));
 																	
-											                       }
+											                        }*/
 											                                               
 																	if(k==b-1)
 																	 {
@@ -5303,7 +5406,30 @@ public double determinant(double a[][],int n)
 																               // angle = dsq[l][i];
 																	 }
 																	}
-
+															  value = dsq[l][i];
+														  angle = (Math.acos(value)*180)/Math.PI;		
+															//System.out.println(i +" "+angle +" tan angle "+ Math.tan(angle*Math.PI/180));
+															if(i==0||i==(h*w)/4||i==(h*w)/2||i==(h*w)*3/4)
+															sikka=-1;
+															if(i>=0&&i<(h*w/4))
+															{ band1[++sikka] = dsq[l][i];
+															//	System.out.println("band 1 : "+sikka);
+															}
+															else if(i>=(h*w)/4 && i<((h*w)/2))
+															{ band2[++sikka] = dsq[l][i];
+															//	System.out.println("band 2 : "+sikka);
+															}
+														        else if(i>=(h*w)/2 && i<((h*w)*3/4))
+															{ band3[++sikka] = dsq[l][i]; 
+															//	System.out.println("band 3 : "+sikka);
+															}	
+															else if(i>=(h*w)*3/4 && i<((h*w)))
+															{ band4[++sikka] = dsq[l][i]; 
+															//  System.out.println("band 4 : "+sikka);
+															}
+															if(i==h*w-1)
+															 showValuesOfSid();
+		
 
 				  				   				  				     /****Mixing second Distance*/
 				  				   				  				      if(flag_second==0)
@@ -5350,8 +5476,10 @@ public double determinant(double a[][],int n)
 												  dsq[l][i]=(sub[k][0])/(mul[0][k]*subT[0][k]);
 							                         if(mul[0][k]*subT[0][k]!=0)		
 							                         {
-							                          angle = dsq[l][i];
-													System.out.println(i +" tan angle for each pixel"+ Math.tan(angle)*180/Math.PI);
+							                             value = dsq[l][i];
+										     angle = (Math.acos(value)*180)/Math.PI;		
+															
+										     System.out.println(i +" tan angle for each pixel"+ Math.tan(angle*Math.PI/180));
 													
 							                       }
 							                                               
@@ -5384,7 +5512,8 @@ public double determinant(double a[][],int n)
 											subT[0][j]=0;
 										 for(int k=0;k<b;k++)
 										 {
-											mul[0][j]+=(x[k]*x[k]);
+					
+					mul[0][j]+=(x[k]*x[k]);
 											subT[0][j]+=(mean[l][k]*mean[l][k]);
 											if(k==b-1)
 											{
@@ -5401,8 +5530,9 @@ public double determinant(double a[][],int n)
 												  dsq[l][i]=(sub[k][0])/(mul[0][k]*subT[0][k]);
 							                         if(mul[0][k]*subT[0][k]!=0)		
 							                         {
-							                          angle = dsq[l][i];
-													System.out.println(i +" sin angle for each pixel "+ Math.sin(angle)*180/Math.PI);
+							                        value = dsq[l][i];
+										angle = (Math.acos(value)*180)/Math.PI;		
+														System.out.println(i +" sin angle for each pixel "+ Math.sin(angle*Math.PI/180));
 													
 							                       }
 							                                               
@@ -5414,6 +5544,7 @@ public double determinant(double a[][],int n)
 													}
                                        }
 
+                   
                //...........CORRELATION............................
 
 
@@ -5628,7 +5759,7 @@ public double determinant(double a[][],int n)
 				 System.out.println("Meu has been Computed for Fuzzy C-Means.....:P");
 				 System.out.println("meu"+ meu[0][65920]);
 			  	   		  System.out.println("meu"+ meu[1][65920]);
-			  	   		  System.out.println(angle + "value's Cos Inverse :::::::::::::"+Math.acos(angle)*(180/Math.PI)+ " degree");
+			  	   		//  System.out.println(angle + "value's Cos Inverse :::::::::::::"+Math.acos(angle)*(180/Math.PI)+ " degree");
 
 
 		  		}
@@ -6753,12 +6884,12 @@ public double determinant(double a[][],int n)
 				pixels_array=new double[len];
 
 				//Code to print the values of pixel array
-
+				int pix=1;
 		        for(int m=0;m<len;m++)
 		        {
 
 		       		pixels_array[m]=pixelsarray[m].doubleValue();     //converting double object to primitive double**/
-		       		System.out.println(pixels_array[m]);
+		       		System.out.println("Array "+ Integer.toString(pix++)+"  "+ pixels_array[m]);
 		        }
 
 
@@ -6824,9 +6955,12 @@ public double determinant(double a[][],int n)
 
 			System.out.println();
 			tmp=0.0;
+				
+			meantemp = new double[4];
+
 			for(int i=0;i<bands;i++)
 			{
-				tmp = tmp + b[i];
+				meantemp[i] = b[i];
 				 model.setValueAt(b[i],row,i+1);
 			}
 			row++;
